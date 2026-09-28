@@ -6,7 +6,7 @@ Sistem Informasi Akuntansi Pengeluaran Kas dan Biaya Operasional Usaha Sewa Kos.
 
 Aplikasi dapat diakses secara online melalui link berikut:
 
-👉 **[Lihat Live Demo Sistem](https://github.com/taniazefanya03/SIA-Kos-Putri-Harmoni-Residence)**
+👉 **[Lihat Live Demo Sistem](https://taniazefanya03.github.io/SIA-Kos-Putri-Harmoni-Residence/)**
 
 > Silakan buka link di atas untuk mencoba sistem secara langsung tanpa perlu menjalankan aplikasi melalui VS Code.
 
