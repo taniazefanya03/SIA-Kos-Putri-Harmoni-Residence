@@ -2,6 +2,16 @@
 
 Sistem Informasi Akuntansi Pengeluaran Kas dan Biaya Operasional Usaha Sewa Kos.
 
+## 🌐 Live Demo
+
+Aplikasi dapat diakses secara online melalui link berikut:
+
+👉 **[Lihat Live Demo Sistem](https://username.github.io/sia-kos-putri/)**
+
+> Silakan buka link di atas untuk mencoba sistem secara langsung tanpa perlu menjalankan aplikasi melalui VS Code.
+
+
+
 ## Teknologi
 
 - HTML5
