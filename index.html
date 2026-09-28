@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sistem Informasi Akuntansi Pengeluaran Kas dan Biaya Operasional Usaha Sewa Kos">
+  <title>SIA Pengeluaran Kos</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            emeralddeep: '#064E3B',
+            emeraldnight: '#022C22',
+            burgundy: '#881337',
+            burgundydark: '#4C0519'
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Font Awesome via CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9p0K5V5xwJ4M0p7x1Y0bYjQJm2v8Yq0dKx4xV7Xx1mG2mJ4wGv7n6xw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-800">
+  <div id="toast-container" class="fixed right-4 top-4 z-[100] space-y-2"></div>
+
+  <div class="min-h-screen lg:flex">
+    <!-- Mobile overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 z-30 hidden bg-black/50 lg:hidden"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col sidebar-shell shadow-2xl transition-transform duration-300 lg:static lg:translate-x-0">
+      <div class="sidebar-brand">
+        <div class="brand-mark"><i class="fa-solid fa-house-chimney"></i></div>
+        <div class="min-w-0">
+          <h1 id="sidebar-kos-name" class="brand-title">Kost Harmoni Residence</h1>
+          <p class="brand-subtitle">Sistem Informasi Akuntansi</p>
+        </div>
+      </div>
+
+      <div class="sidebar-profile">
+        <div class="sidebar-profile-icon"><i class="fa-solid fa-venus"></i></div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center justify-between gap-2">
+            <p id="sidebar-property-type" class="sidebar-profile-title">Kos Putri</p>
+            <span class="sidebar-profile-dot"><i class="fa-solid fa-circle"></i></span>
+          </div>
+          <p id="sidebar-kos-address" class="sidebar-profile-address">Semarang, Jawa Tengah</p>
+        </div>
+      </div>
+
+      <nav class="flex-1 space-y-1 px-4 py-5">
+        <p class="nav-section-label">Utama</p>
+        <button data-page="dashboard" class="nav-item active">
+          <i class="fa-solid fa-chart-pie w-5"></i><span>Dashboard</span>
+        </button>
+        <p class="nav-section-label mt-5">Akuntansi</p>
+        <button data-page="transactions" class="nav-item">
+          <i class="fa-solid fa-money-bill-transfer w-5"></i><span>Pengeluaran Kas</span>
+        </button>
+        <button data-page="reports" class="nav-item">
+          <i class="fa-solid fa-file-invoice-dollar w-5"></i><span>Laporan Akuntansi</span>
+        </button>
+        <button data-page="categories" class="nav-item">
+          <i class="fa-solid fa-layer-group w-5"></i><span>Kategori Biaya</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-contact">
+          <div class="sidebar-contact-icon"><i class="fa-solid fa-location-dot"></i></div>
+          <div class="min-w-0">
+            <p>Alamat properti</p>
+            <strong id="sidebar-full-address">Jl. Cempaka Raya No. 18, Semarang</strong>
+          </div>
+        </div>
+        <div id="connection-status" class="status-pill offline">
+          <span class="status-dot"></span>
+          <span id="connection-text">Mode Lokal</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="min-w-0 flex-1">
+      <header class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 shadow-sm backdrop-blur md:px-6">
+        <div class="flex items-center gap-3">
+          <button id="mobile-menu" class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" aria-label="Buka menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div>
+            <h2 id="page-title" class="text-lg font-bold text-slate-900">Dashboard</h2>
+            <p id="page-subtitle" class="hidden text-xs text-slate-500 sm:block">Ringkasan pengeluaran operasional usaha kos</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="today-label" class="hidden rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600 sm:inline-flex"></span>
+          <button id="quick-add" class="btn-primary">
+            <i class="fa-solid fa-plus"></i><span class="hidden sm:inline">Pengeluaran Baru</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="mx-auto max-w-[1600px] p-4 md:p-6">
+        <!-- Dashboard -->
+        <section id="page-dashboard" class="page-section">
+          <div class="dashboard-intro">
+            <div>
+              <div class="section-kicker">Ringkasan Keuangan</div>
+              <h3 class="page-heading">Dashboard</h3>
+              <p class="page-description">Pantau pengeluaran dan biaya operasional kos dalam satu tampilan.</p>
+            </div>
+            <div class="dashboard-date"><i class="fa-regular fa-calendar"></i><span id="dashboard-date-label"></span></div>
+          </div>
+
+          <div class="dashboard-hero">
+            <div class="property-photo-card">
+              <img class="property-photo" src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1600&q=88" alt="Foto ilustrasi properti kos putri" onerror="this.style.display='none'">
+              <div class="photo-overlay"></div>
+              <div class="photo-top-badge"><i class="fa-solid fa-house"></i><span>Properti Aktif</span></div>
+              <div class="photo-type-badge"><i class="fa-solid fa-venus"></i> Kos Putri</div>
+              <div class="photo-content">
+                <p class="photo-kicker">Properti · Semarang</p>
+                <h4 id="hero-kos-name">Kost Harmoni Residence</h4>
+                <p class="photo-address"><i class="fa-solid fa-location-dot"></i><span id="hero-kos-address">Jl. Cempaka Raya No. 18, Semarang</span></p>
+                <div class="photo-tags">
+                  <span><i class="fa-solid fa-bed"></i> 24 kamar</span>
+                  <span><i class="fa-solid fa-wifi"></i> Wi-Fi</span>
+                  <span><i class="fa-solid fa-video"></i> CCTV</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-side">
+              <div class="hero-total-card">
+                <div class="hero-card-head"><span>Pengeluaran bulan ini</span><span class="hero-circle"><i class="fa-solid fa-arrow-trend-up"></i></span></div>
+                <p id="hero-month-total" class="hero-total">Rp 0</p>
+                <div class="hero-total-footer"><span><i class="fa-solid fa-calendar-days"></i> September 2026</span><span id="hero-month-count-label">0 transaksi</span></div>
+              </div>
+
+              <div class="hero-info-card">
+                <div class="hero-info-head"><div><span class="mini-eyebrow">Ringkasan properti</span><strong>Kondisi operasional</strong></div><span class="open-badge"><i class="fa-solid fa-circle"></i> Aktif</span></div>
+                <div class="hero-info-grid">
+                  <div class="hero-metric"><span><i class="fa-solid fa-wallet"></i> Transaksi</span><strong id="hero-month-count">0</strong></div>
+                  <div class="hero-metric"><span><i class="fa-solid fa-bolt"></i> Utilitas</span><strong id="hero-utility-total">Rp 0</strong></div>
+                  <div class="hero-metric"><span><i class="fa-solid fa-clock"></i> Belum lunas</span><strong id="hero-unpaid-total">Rp 0</strong></div>
+                  <div class="hero-metric"><span><i class="fa-solid fa-layer-group"></i> Terbesar</span><strong id="hero-largest-category">-</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="property-overview">
+            <div class="property-overview-main">
+              <div class="overview-icon"><i class="fa-solid fa-building-user"></i></div>
+              <div>
+                <p class="overview-kicker">Profil properti</p>
+                <h4 id="overview-property-name">Kost Harmoni Residence</h4>
+                <p id="overview-property-address">Jl. Cempaka Raya No. 18, Semarang</p>
+              </div>
+            </div>
+            <div class="overview-item"><span>Jenis</span><strong id="overview-property-type">Kos Putri</strong></div>
+            <div class="overview-item"><span>Kapasitas</span><strong>24 kamar</strong></div>
+            <div class="overview-item"><span>Fasilitas</span><strong>Wi-Fi · CCTV · Parkir</strong></div>
+            <div class="overview-item"><span>Admin</span><strong>08.00–20.00</strong></div>
+          </div>
+
+          <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div class="stat-card stat-card-featured">
+              <div class="stat-icon emerald"><i class="fa-solid fa-wallet"></i></div>
+              <div><p class="stat-label">Pengeluaran Bulan Ini</p><p id="stat-month-total" class="stat-value">Rp 0</p><p class="stat-note"><i class="fa-solid fa-calendar-days"></i> Bulan berjalan</p></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon red"><i class="fa-solid fa-bolt"></i></div>
+              <div><p class="stat-label">Utilitas Bulan Ini</p><p id="stat-utility-total" class="stat-value">Rp 0</p><p class="stat-note"><i class="fa-solid fa-plug"></i> Listrik, air, internet</p></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon amber"><i class="fa-solid fa-arrow-trend-up"></i></div>
+              <div><p class="stat-label">Kategori Terbesar</p><p id="stat-largest-category" class="stat-value text-lg">-</p><p id="stat-largest-amount" class="stat-note">Rp 0</p></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon slate"><i class="fa-solid fa-receipt"></i></div>
+              <div><p class="stat-label">Transaksi Bulan Ini</p><p id="stat-month-count" class="stat-value">0</p><p class="stat-note"><i class="fa-solid fa-list"></i> Bukti kas keluar</p></div>
+            </div>
+          </div>
+
+          <div class="mt-6 grid gap-6 xl:grid-cols-5">
+            <div class="panel xl:col-span-3">
+              <div class="panel-header">
+                <div><h4 class="panel-title">Distribusi Pengeluaran</h4><p class="panel-subtitle">Berdasarkan kategori bulan berjalan</p></div>
+                <button data-page="reports" class="panel-link">Lihat laporan <i class="fa-solid fa-arrow-right ml-1"></i></button>
+              </div>
+              <div id="category-distribution" class="space-y-4 p-5"></div>
+            </div>
+            <div class="panel xl:col-span-2">
+              <div class="panel-header">
+                <div><h4 class="panel-title">Pengeluaran Terbaru</h4><p class="panel-subtitle">5 transaksi terakhir</p></div>
+                <button data-page="transactions" class="panel-link">Semua <i class="fa-solid fa-arrow-right ml-1"></i></button>
+              </div>
+              <div id="recent-transactions" class="divide-y divide-slate-100"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Transactions -->
+        <section id="page-transactions" class="page-section hidden">
+          <div class="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <div class="section-kicker">Kas Keluar</div>
+              <h3 class="page-heading">Manajemen Pengeluaran</h3>
+              <p class="page-description">Tambah, ubah, hapus, dan cari transaksi pengeluaran kas.</p>
+            </div>
+            <button id="add-transaction" class="btn-primary"><i class="fa-solid fa-plus"></i> Tambah Pengeluaran</button>
+          </div>
+
+          <div class="panel">
+            <div class="border-b border-slate-100 p-4">
+              <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                <div class="xl:col-span-2">
+                  <label class="field-label">Cari transaksi</label>
+                  <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400"></i>
+                    <input id="transaction-search" class="form-input pl-9" placeholder="No. bukti, deskripsi, unit...">
+                  </div>
+                </div>
+                <div>
+                  <label class="field-label">Kategori</label>
+                  <select id="filter-category" class="form-input"></select>
+                </div>
+                <div>
+                  <label class="field-label">Bulan</label>
+                  <input id="filter-month" type="month" class="form-input">
+                </div>
+                <div>
+                  <label class="field-label">Status</label>
+                  <select id="filter-status" class="form-input">
+                    <option value="">Semua Status</option>
+                    <option value="Lunas">Lunas</option>
+                    <option value="Belum Lunas">Belum Lunas</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>No. Bukti</th>
+                    <th>Tanggal</th>
+                    <th>Kategori</th>
+                    <th>Unit/Kamar</th>
+                    <th>Deskripsi</th>
+                    <th>Metode</th>
+                    <th>Status</th>
+                    <th class="text-right">Jumlah</th>
+                    <th class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="transaction-table-body"></tbody>
+              </table>
+            </div>
+            <div class="flex flex-col justify-between gap-2 border-t border-slate-100 px-4 py-3 text-sm md:flex-row md:items-center">
+              <span id="transaction-count" class="text-slate-500">0 transaksi</span>
+              <strong id="transaction-total" class="text-slate-900">Total: Rp 0</strong>
+            </div>
+          </div>
+        </section>
+
+        <!-- Reports -->
+        <section id="page-reports" class="page-section hidden">
+          <div class="mb-6">
+            <div class="section-kicker">Pelaporan Akuntansi</div>
+            <h3 class="page-heading">Laporan Pengeluaran</h3>
+            <p class="page-description">Rekap harian, bulanan, tahunan, per kategori, dan buku kas keluar.</p>
+          </div>
+
+          <div class="panel mb-6">
+            <div class="flex flex-col gap-4 p-5 lg:flex-row lg:items-end lg:justify-between">
+              <div class="grid flex-1 gap-3 md:grid-cols-3">
+                <div>
+                  <label class="field-label">Periode</label>
+                  <select id="report-period" class="form-input">
+                    <option value="daily">Harian</option>
+                    <option value="monthly" selected>Bulanan</option>
+                    <option value="yearly">Tahunan</option>
+                  </select>
+                </div>
+                <div id="report-date-wrapper">
+                  <label class="field-label">Tanggal</label>
+                  <input id="report-date" type="date" class="form-input">
+                </div>
+                <div id="report-month-wrapper">
+                  <label class="field-label">Bulan</label>
+                  <input id="report-month" type="month" class="form-input">
+                </div>
+                <div id="report-year-wrapper" class="hidden">
+                  <label class="field-label">Tahun</label>
+                  <input id="report-year" type="number" min="2000" max="2100" class="form-input">
+                </div>
+              </div>
+              <button id="refresh-report" class="btn-secondary"><i class="fa-solid fa-rotate"></i> Tampilkan Rekap</button>
+            </div>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-3">
+            <div class="summary-card">
+              <span>Total Periode</span>
+              <strong id="report-total">Rp 0</strong>
+            </div>
+            <div class="summary-card">
+              <span>Jumlah Transaksi</span>
+              <strong id="report-count">0</strong>
+            </div>
+            <div class="summary-card">
+              <span>Rata-rata Transaksi</span>
+              <strong id="report-average">Rp 0</strong>
+            </div>
+          </div>
+
+          <div class="mt-6 grid gap-6 xl:grid-cols-2">
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <h4 class="panel-title">Rekap Biaya per Kategori</h4>
+                  <p id="report-period-label" class="panel-subtitle"></p>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead><tr><th>Kategori</th><th>Transaksi</th><th class="text-right">Total</th><th class="text-right">%</th></tr></thead>
+                  <tbody id="report-category-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <h4 class="panel-title">Buku Kas Keluar</h4>
+                  <p class="panel-subtitle">Kronologis dengan akumulasi kas keluar</p>
+                </div>
+              </div>
+              <div class="table-wrap max-h-[500px] overflow-auto">
+                <table class="data-table">
+                  <thead><tr><th>Tanggal</th><th>No. Bukti</th><th>Keterangan</th><th class="text-right">Kas Keluar</th><th class="text-right">Akumulasi</th></tr></thead>
+                  <tbody id="cash-book-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Categories -->
+        <section id="page-categories" class="page-section hidden">
+          <div class="mb-6">
+            <div class="section-kicker">Master Data</div>
+            <h3 class="page-heading">Kategori Biaya</h3>
+            <p class="page-description">Kelola kelompok biaya operasional yang digunakan pada transaksi.</p>
+          </div>
+
+          <div class="grid gap-6 lg:grid-cols-3">
+            <div class="panel h-fit">
+              <div class="panel-header"><h4 class="panel-title">Tambah Kategori</h4></div>
+              <form id="category-form" class="space-y-4 p-5">
+                <input type="hidden" id="category-id">
+                <div>
+                  <label class="field-label">Nama Kategori</label>
+                  <input id="category-name" class="form-input" required maxlength="100" placeholder="Contoh: Biaya Utilitas">
+                </div>
+                <div>
+                  <label class="field-label">Keterangan</label>
+                  <textarea id="category-description" class="form-input min-h-24" maxlength="255" placeholder="Keterangan kategori..."></textarea>
+                </div>
+                <div class="flex gap-2">
+                  <button class="btn-primary flex-1" type="submit"><i class="fa-solid fa-save"></i> Simpan</button>
+                  <button id="cancel-category" class="btn-secondary hidden" type="button">Batal</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="panel lg:col-span-2">
+              <div class="panel-header">
+                <div><h4 class="panel-title">Daftar Kategori</h4><p class="panel-subtitle">Kategori bawaan dapat diedit atau dihapus jika belum digunakan.</p></div>
+              </div>
+              <div id="category-list" class="divide-y divide-slate-100"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Transaction Modal -->
+  <div id="transaction-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="flex items-start justify-between border-b border-slate-100 px-5 py-4">
+        <div>
+          <h3 id="transaction-modal-title" class="text-lg font-extrabold text-slate-900">Tambah Pengeluaran</h3>
+          <p class="mt-1 text-xs text-slate-500">Isi data bukti kas keluar secara lengkap.</p>
+        </div>
+        <button id="close-transaction-modal" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="transaction-form" class="space-y-4 p-5">
+        <input type="hidden" id="transaction-id">
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="field-label">Nomor Bukti Kas Keluar <span class="text-rose-600">*</span></label>
+            <input id="proof-number" class="form-input" required maxlength="50" placeholder="BKK-2026-0001">
+          </div>
+          <div>
+            <label class="field-label">Tanggal Transaksi <span class="text-rose-600">*</span></label>
+            <input id="transaction-date" type="date" class="form-input" required>
+          </div>
+          <div>
+            <label class="field-label">Kategori Biaya <span class="text-rose-600">*</span></label>
+            <select id="transaction-category" class="form-input" required></select>
+          </div>
+          <div>
+            <label class="field-label">Unit / Kamar Kos</label>
+            <input id="unit-name" class="form-input" maxlength="100" placeholder="Kamar 101 / Umum">
+          </div>
+          <div class="md:col-span-2">
+            <label class="field-label">Deskripsi / Keterangan <span class="text-rose-600">*</span></label>
+            <textarea id="transaction-description" class="form-input min-h-24" required maxlength="500" placeholder="Contoh: Pembayaran tagihan listrik periode September 2026"></textarea>
+          </div>
+          <div>
+            <label class="field-label">Jumlah (Rp) <span class="text-rose-600">*</span></label>
+            <input id="transaction-amount" type="number" min="0" step="1" class="form-input" required placeholder="0">
+          </div>
+          <div>
+            <label class="field-label">Metode Pembayaran <span class="text-rose-600">*</span></label>
+            <select id="payment-method" class="form-input" required>
+              <option value="Kas">Kas</option>
+              <option value="Transfer Bank">Transfer Bank</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Status Pembayaran <span class="text-rose-600">*</span></label>
+            <select id="payment-status" class="form-input" required>
+              <option value="Lunas">Lunas</option>
+              <option value="Belum Lunas">Belum Lunas</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
+          <button id="cancel-transaction" type="button" class="btn-secondary">Batal</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Transaksi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirm-modal" class="modal-backdrop hidden">
+    <div class="modal-card max-w-md p-6">
+      <div class="flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-700"><i class="fa-solid fa-trash"></i></div>
+      <h3 class="mt-4 text-lg font-extrabold">Hapus transaksi?</h3>
+      <p class="mt-2 text-sm leading-relaxed text-slate-500">Data yang dihapus tidak dapat dikembalikan. Pastikan transaksi yang dipilih sudah benar.</p>
+      <div class="mt-6 flex justify-end gap-2">
+        <button id="confirm-cancel" class="btn-secondary">Batal</button>
+        <button id="confirm-delete" class="btn-danger"><i class="fa-solid fa-trash"></i> Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
